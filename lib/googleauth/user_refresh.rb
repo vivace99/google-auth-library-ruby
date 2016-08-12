@@ -89,6 +89,21 @@ module Google
         super(options)
       end
 
+      # Refresh the credential
+      def refresh!(options = {})
+        c = options[:connection] || Faraday.default_connection
+        resp = c.get(TOKEN_CRED_URI, client_id: client_id, client_secret: client_secret, trant_type: 'refresh_token', refresh_token: refresh_token)
+        case resp.status
+        when 200
+          data = MultiJson.load(resp.body)
+          self.access_token = data['access_token']
+          #self.expires_at = (DateTime.now + data['expires_in']).to_i
+        else
+          raise(Signet::AuthorizationError,
+                "Unexpected error code #{resp.status}")
+        end
+      end
+
       # Revokes the credential
       def revoke!(options = {})
         c = options[:connection] || Faraday.default_connection
